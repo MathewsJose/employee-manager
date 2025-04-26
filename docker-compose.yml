@@ -1,0 +1,56 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: employee_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      PHP_UPLOAD_MAX_FILESIZE: 500M
+      PHP_POST_MAX_SIZE: 500M
+      PHP_MAX_EXECUTION_TIME: 300
+    networks:
+      - employee_network
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: employee_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - employee_network
+    depends_on:
+      - app
+
+  db:
+    image: mariadb:10.5
+    container_name: employee_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: employee_manager
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    networks:
+      - employee_network
+    volumes:
+      - dbdata:/var/lib/mysql
+
+networks:
+  employee_network:
+    driver: bridge
+
+volumes:
+  dbdata:
